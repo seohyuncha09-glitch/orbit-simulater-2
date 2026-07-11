@@ -54,22 +54,22 @@ b = a * np.sqrt(1 - e**2)
 c = a * e
 mu = (4 * np.pi**2 * (a**3)) / (T**2) if T > 0 else 1.0
 
-# [Python 코드 영역]
+# 🌟 [오류 해결 및 위치 정렬] 항성 정보 및 분광형 안전하게 먼저 추출
+is_star_rad_missing = 'st_rad' not in p_data or pd.isna(p_data['st_rad'])
+star_rad = 1.0 if is_star_rad_missing else float(p_data['st_rad'])
+star_teff = p_data['st_teff'] if 'st_teff' in p_data else np.nan
+star_spectral_type = p_data['st_spectype'] if 'st_spectype' in p_data and not pd.isna(p_data['st_spectype']) else "정보 없음"
+star_mass = float(p_data['st_mass']) if 'st_mass' in p_data and not pd.isna(p_data['st_mass']) else 1.0
 
-# 1. 태양의 표면온도 기준값 설정
+# 🌟 [물리 법칙 고도화] 슈테판-볼츠만 법칙을 이용한 고정밀 골디락스 존 범위 계산
 T_SUN = 5778.0
+t_star_calc = float(star_teff) if not pd.isna(star_teff) else T_SUN
 
-# 2. 데이터가 없을 때를 대비한 예외 처리 (기본값은 태양 크기와 온도인 1.0과 5778)
-r_star = star_rad if not pd.isna(star_rad) else 1.0
-t_star = star_teff if not pd.isna(star_teff) else T_SUN
-
-# 3. 슈테판-볼츠만 법칙을 적용해 항성의 진짜 광도(L) 계산
-star_luminosity = (r_star ** 2) * ((t_star / T_SUN) ** 4)
-
-# 4. 이미지 속 정석 공식을 루트(np.sqrt) 계산으로 100% 구현
-hz_inner = np.sqrt(star_luminosity / 1.1)   # 안쪽 경계 (S=1.1)
-hz_outer = np.sqrt(star_luminosity / 0.53)  # 바깥쪽 경계 (S=0.53)
-# --------------------------------------------------
+# 광도 L = R^2 * (T/5778)^4 계산
+star_luminosity = (star_rad ** 2) * ((t_star_calc / T_SUN) ** 4)
+# 이미지 정석 공식 기반 범위 산출 (안쪽: 루트(L/1.1), 바깥쪽: 루트(L/0.53))
+hz_inner = np.sqrt(star_luminosity / 1.1)
+hz_outer = np.sqrt(star_luminosity / 0.53)
 
 # 분광형 데이터(st_spectype) 첫 글자 기반 색상 지정 함수
 def get_star_color_by_spectype(spectype, teff):
@@ -82,7 +82,6 @@ def get_star_color_by_spectype(spectype, teff):
         elif first_char == 'K': return '#ffd2a1'
         elif first_char == 'M': return '#ff8585'
     
-    # 분광형 정보가 비어있거나 불명확할 경우 표면온도로 폴백
     if pd.isna(teff): return '#FF9F43'
     if teff >= 10000: return '#9bb0ff'
     elif teff >= 7500: return '#aabfff'
@@ -195,6 +194,7 @@ with col1:
             const showHabitableZone = {str(show_habitable_zone).lower()};
             const highlightPlanet = {str(highlight_planet).lower()};
             
+            // 고도화된 슈테판-볼츠만 기반 HZ 수치가 자바스크립트 엔진에 부드럽게 주입됩니다.
             const hzInner = {hz_inner};
             const hzOuter = {hz_outer};
 
@@ -260,7 +260,6 @@ with col1:
                 let M_val = (2 * Math.PI / T) * currentDays;
                 let E_val = M_val + e * Math.sin(M_val) + (e*e/2) * Math.sin(2*M_val);
                 
-                // 타원 궤도의 기준점 위치 방향 정상화 (-c 처리)
                 let planetX_AU = a * Math.cos(E_val) - c;
                 let planetY_AU = b * Math.sin(E_val);
                 
@@ -329,7 +328,7 @@ with col1:
                     ctx.restore();
                 }}
 
-                // 지구 궤도 비교선 렌더링 (항성은 0,0에 위치하므로 -earthC 적용)
+                // 지구 궤도 비교선 렌더링
                 if (showEarthOrbit) {{
                     ctx.save();
                     ctx.translate(toCanvasX(-earthC), toCanvasY(0));
@@ -342,7 +341,7 @@ with col1:
                     ctx.restore();
                 }}
 
-                // 대상 행성 궤도선 그리기 (항성은 0,0에 위치하므로 -c 적용)
+                // 대상 행성 궤도선 그리기
                 ctx.save();
                 ctx.translate(toCanvasX(-c), toCanvasY(0));
                 ctx.strokeStyle = 'rgba(74, 144, 226, 0.6)';
@@ -419,6 +418,7 @@ with col2:
     star_teff_display = f"{star_teff:.1f} K" if not pd.isna(star_teff) else "정보 없음"
     pl_rade_display = "정보 없음" if is_pl_rade_missing else f"{pl_rade:.3f} Earth Rad"
     
+    # 🍀 우측 데이터 카드 패널에 슈테판-볼츠만 분석 통계 추가 명시
     info_text = (
         f"### 🪐 행성 특성 정보\n"
         f"* **이름:** `{p_data['pl_name']}`\n"
@@ -430,6 +430,10 @@ with col2:
         f"* **항성 반지름:** `{star_rad_display}` \n"
         f"* **항성 질량:** `{check_val(p_data['st_mass'] if 'st_mass' in p_data else np.nan, 'Solar Mass')}`\n"
         f"* **항성 표면온도:** `{star_teff_display}`\n"
-        f"* **분광형:** ` {star_spectral_type} `"
+        f"* **분광형:** ` {star_spectral_type} `\n\n"
+        f"### 🍀 생명체 거주가능 영역(HZ)\n"
+        f"* **산출 절대광도:** `{star_luminosity:.4f} $L_\odot$`\n"
+        f"* **HZ 안쪽 경계:** `{hz_inner:.3f} AU` \n"
+        f"* **HZ 바깥쪽 경계:** `{hz_outer:.3f} AU`"
     )
     st.markdown(info_text)
