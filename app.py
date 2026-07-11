@@ -430,10 +430,6 @@ with col2:
         f"* **항성 반지름:** `{star_rad_display}` \n"
         f"* **항성 질량:** `{check_val(p_data['st_mass'] if 'st_mass' in p_data else np.nan, 'Solar Mass')}`\n"
         f"* **항성 표면온도:** `{star_teff_display}`\n"
-        f"* **분광형:** ` {star_spectral_type} `\n\n"
-        f"### 🍀 생명체 거주가능 영역(HZ)\n"
-        f"* **산출 절대광도:** `{star_luminosity:.4f} $L_\odot$`\n"
-        f"* **HZ 안쪽 경계:** `{hz_inner:.3f} AU` \n"
-        f"* **HZ 바깥쪽 경계:** `{hz_outer:.3f} AU`"
+        f"* **분광형:** ` {star_spectral_type} `
     )
     st.markdown(info_text)
